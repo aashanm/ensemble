@@ -41,10 +41,10 @@ for i in range(4):
 for i in range(len(heartbeat_sounds)):
     counter = 0
     while counter < 3: # 3 iterations per user
-        track_delay = AudioSegment.silent(duration=delays[i]*1000)
+        track_delay = AudioSegment.silent(duration=delays[0]*1000)
         track += heartbeat_sounds[i] + track_delay
         play(heartbeat_sounds[i])
-        time.sleep(delays[i])
+        time.sleep(delays[0])
         counter += 1
 
 track.export("Downloads/multiple_heartbeats_output.mp4", format="mp4")
