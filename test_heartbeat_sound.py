@@ -26,28 +26,24 @@ ser.close()
 # hard coded test values
 bpm = [60, 75, 90, 115, 47]
 delays = [60/x for x in bpm]
-
 duration = 3000 # in milliseconds
 suggested_frequencies = [334, 689, 839, 892, 1452, 1560, 1823, 3154, 3208, 3406, 3595, 3607, 4005, 4176, 4338, 4754, 5408, 5782, \
                          6500, 6697, 7009] # in Hertz
 
-track = AudioSegment.empty() # for exporting
 heartbeat_sounds = []
-heartbeat_sounds.append(AudioSegment.from_file("Downloads/single_heartbeat_sound_effect.mp3"))
-for i in range(4):
-    heartbeat_sounds.append(heartbeat_sounds[i].overlay(heartbeat_sounds[0], position=delays[i+1]))
+heartbeat_sounds.append(AudioSegment.from_file("Downloads/single-heartbeat-sound-effect_qiBGgufL.mp3"))
 
-# play heartbeat sounds (user)
-for i in range(len(heartbeat_sounds)):
-    counter = 0
-    while counter < 3: # 3 iterations per user
-        track_delay = AudioSegment.silent(duration=delays[0]*1000)
-        track += heartbeat_sounds[i] + track_delay
-        play(heartbeat_sounds[i])
-        time.sleep(delays[0])
-        counter += 1
+user_heartbeats = []
+user_heartbeats.append((heartbeat_sounds[0] + AudioSegment.silent(duration=delays[0]*1000)) * 3)
+for i in range(1, 5):
+    user_heartbeats.append(user_heartbeats[i-1].overlay((heartbeat_sounds[0] + AudioSegment.silent(duration=delays[i]*1000)) * 3, position=delays[i]*1000))
 
-track.export("Downloads/multiple_heartbeats_output.mp4", format="mp4")
+track = AudioSegment.empty() # for exporting
+for i in range(5):
+    play(user_heartbeats[i])
+    track += user_heartbeats[i]
+
+track.export("Downloads/multiple_heartbeats_output.mp3", format="mp3")
 
 # play frequency noises (Chladni plate)
 '''
