@@ -9,7 +9,7 @@ user_heartbeats = []
 num_beat_repetitions = 5
 bpm = [110, 75, 80, 48, 55]       
 track = AudioSegment.empty()
-single_heartbeat = AudioSegment.from_file("Downloads/single-heartbeat-sound-effect_qiBGgufL.mp3")
+single_heartbeat = AudioSegment.from_file("single-heartbeat-sound-effect_qiBGgufL.mp3")
 
 frequencies = [240, 280, 330, 540, 600, 620, 910, 1210, 1360, 1460, 1760, 2150, 2430, 2560, 2710, 3000, 3190, 3710, 3830, 3920]
 volumes = [35, 35, 30, 35, 45, 45, 45, 45, 45, 40, 45, 45, 45, 45, 55, 45, 50, 45, 50, 55]
@@ -74,9 +74,6 @@ for i in range(1000):
         '''
         for i in range(5):
             track += user_heartbeats[i]
-
         play(heartbeat)
         track.export("Downloads/multiple_heartbeats_output.mp3", format="mp3")
         '''
-
-# ser.close()
