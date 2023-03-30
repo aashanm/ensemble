@@ -6,8 +6,7 @@ import random
 import numpy as np
 
 user_heartbeats = []
-single_beat_repetitions = 10
-multiple_beat_repetitions = 5
+num_beat_repetitions = 5
 bpm = [110, 75, 80, 48, 55]       
 track = AudioSegment.empty()
 single_heartbeat = AudioSegment.from_file("Downloads/single-heartbeat-sound-effect_qiBGgufL.mp3")
@@ -15,7 +14,7 @@ single_heartbeat = AudioSegment.from_file("Downloads/single-heartbeat-sound-effe
 frequencies = [240, 280, 330, 540, 600, 620, 910, 1210, 1360, 1460, 1760, 2150, 2430, 2560, 2710, 3000, 3190, 3710, 3830, 3920]
 volumes = [35, 35, 30, 35, 45, 45, 45, 45, 45, 40, 45, 45, 45, 45, 55, 45, 50, 45, 50, 55]
 freq_vol_pairs = dict(zip(frequencies, volumes))
-freq_duration_sec = 1.5
+freq_duration_sec = 1
 sampling_freq = 44100
 
 frequency_speaker_id = 0
@@ -45,19 +44,21 @@ for i in range(1000):
 
         delays = [60/x for x in bpm]
 
-        user_heartbeats.append((single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * single_beat_repetitions)
-        current_heartbeat_for_repetition = (single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * multiple_beat_repetitions
+        user_heartbeats.append((single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beat_repetitions)
+        user_heartbeats.append((single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beat_repetitions)
+        current_heartbeat_for_repetition = (single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beat_repetitions
 
         for i in range(1, 5):
             if i == 1:
                 user_heartbeats.append(current_heartbeat_for_repetition.overlay(((single_heartbeat) + AudioSegment.silent(duration=delays[i] * 1000)) 
-                    * multiple_beat_repetitions, position=delays[i] * 1000))
+                    * num_beat_repetitions, position=delays[i] * 1000))
             else:
                 user_heartbeats.append(user_heartbeats[i-1].overlay(((single_heartbeat) + AudioSegment.silent(duration=delays[i] * 1000)) 
-                    * multiple_beat_repetitions, position=delays[i] * 1000))
+                    * num_beat_repetitions, position=delays[i] * 1000))
                 
         grouped_frequencies = [frequencies[i:i+4] for i in range(0, len(frequencies), 4)]
         selected_frequencies = [random.choice(group) for group in grouped_frequencies]
+        selected_frequencies.insert(0, selected_frequencies[0])
                 
         for i, clip in enumerate(user_heartbeats):
             clip.export("temp.wav", format="wav")
