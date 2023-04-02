@@ -58,9 +58,6 @@ void loop() {
       //Serial.println(myBPM);                        // Print the value inside of myBPM. 
 
       if (myBPM >= 45 && myBPM <= 120) {
-        Serial.println(myBPM);
-        Serial.println(total);
-        Serial.println(index);
         total = total + myBPM;
         readings[index] = myBPM;
         index = index + 1;
