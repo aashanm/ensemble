@@ -5,9 +5,9 @@ import soundfile as sf
 import random
 import numpy as np
 import time
+import threading
 
-
-user_heartbeats = []
+heartbeat_sounds = []
 num_beats = 4
 num_beat_repetitions = 3
 bpm = [110, 75, 80, 48, 55] 
@@ -38,8 +38,26 @@ except:
     ser = open_serial_port('/dev/cu.usbmodem101')
 '''
 
+lock = threading.Lock()
 
-for i in range(1000):
+def play_audio_pairing(audio, delay, device):
+    print(f"Playing audio {audio} with delay {delay} on device {device}")
+    # load heartbeat sound
+    audio.export("temp.wav", format="wav")
+    audio_data, sample_rate = sf.read("temp.wav", dtype='float32')
+    
+    if delay > 0:
+        padding = np.zeros((int(delay * sample_rate), audio_data.shape[1]))
+        audio_data = np.concatenate((padding, audio_data), axis=0)
+    
+    # Play audio file on the specified sound device
+    sd.play(audio_data, sample_rate, device=device)
+    sd.wait()
+    print(f"Finished playing audio {audio}")
+
+
+
+while True:
     '''
     line = ser.readline()      
     if line:
@@ -58,18 +76,18 @@ for i in range(1000):
     
     # generate user heartbeat sound
     for i in range(num_beat_repetitions):
-        user_heartbeats.append((single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beats)
+        heartbeat_sounds.append((single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beats)
     current_heartbeat_for_repetition = (single_heartbeat + AudioSegment.silent(duration=delays[0] * 1000)) * num_beats
 
     # generate combined heartbeat sounds
     for i in range(1, 5):
         if i == 1:
             for i in range(num_beat_repetitions):
-                user_heartbeats.append(current_heartbeat_for_repetition.overlay(((single_heartbeat) + AudioSegment.silent(duration=(delays[i] * 1000))) 
+                heartbeat_sounds.append(current_heartbeat_for_repetition.overlay(((single_heartbeat) + AudioSegment.silent(duration=(delays[i] * 1000))) 
                     * num_beats, position=(delays[i] * 1000)))
         else:
             for i in range(num_beat_repetitions):
-                user_heartbeats.append(user_heartbeats[i-1].overlay(((single_heartbeat) + AudioSegment.silent(duration=(delays[i] * 1000))) 
+                heartbeat_sounds.append(heartbeat_sounds[i-1].overlay(((single_heartbeat) + AudioSegment.silent(duration=(delays[i] * 1000))) 
                     * num_beats, position=(delays[i] * 1000)))
             
     # add frequency aligned with user heartbeat
@@ -91,18 +109,33 @@ for i in range(1000):
 
     frequencies_to_play = [freq for sublist in frequencies_to_play for freq in sublist]
     print(frequencies_to_play)
+
+    frequency_audio = []
+    for freq in frequencies_to_play:
+        t = np.linspace(0.0, freq_duration_sec, int(freq_duration_sec * sampling_freq), endpoint=False)
+        waveform = (volume) * np.sin(2.0 * np.pi * freq * t)
+        frequency_audio.append(waveform)
             
     # play heartbeat sound and frequency noises simultaneously
-    for i, clip in enumerate(user_heartbeats):
-        clip.export("temp.wav", format="wav")
-        audio_data, sample_rate = sf.read("temp.wav", dtype='float32')
-        sd.play(audio_data, sample_rate, device=heartbeat_speaker_id)
-        sd.wait()
+    threads = []
+    for i in range(len(heartbeat_sounds)):
+        heartbeat_sound = heartbeat_sounds[i]
+        frequency_noise = frequency_audio[i % len(frequencies_to_play)]
+        delay = heartbeat_sound.duration_seconds - freq_duration_sec
+        thread = threading.Thread(target=play_audio_pairing, args=(heartbeat_sound, delay, heartbeat_speaker_id))
+        threads.append(thread)
+        thread.start()
+        thread = threading.Thread(target=play_audio_pairing, args=(frequency_noise, 0, frequency_speaker_id))
+        threads.append(thread)
+        thread.start()
 
-        t = np.linspace(0.0, freq_duration_sec, int(freq_duration_sec * sampling_freq), endpoint=False)
-        waveform = (volume) * np.sin(2.0 * np.pi * frequencies_to_play[i] * t)
-        sd.play(waveform, sampling_freq, device=frequency_speaker_id)
-        sd.wait()
+    for thread in threads:
+        thread.join()
+
+    frequencies_to_play.clear()
+    frequency_audio.clear()
+    heartbeat_sounds.clear()
+
 
     # ser.write('\x0c'.encode())
 
